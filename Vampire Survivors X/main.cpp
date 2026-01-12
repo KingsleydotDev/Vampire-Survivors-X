@@ -1,95 +1,101 @@
 #include "includes.h"
+#include "hooks.hpp"
+#include "gui.hpp"
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-Present oPresent;
-HWND window = NULL;
-WNDPROC oWndProc;
-ID3D11Device* pDevice = NULL;
-ID3D11DeviceContext* pContext = NULL;
-ID3D11RenderTargetView* mainRenderTargetView;
-
-void InitImGui()
-{
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
-	ImGui_ImplWin32_Init(window);
-	ImGui_ImplDX11_Init(pDevice, pContext);
-}
-
 LRESULT __stdcall WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
-	if (true && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
-		return true;
-
-	return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
+    if (vars::bShowMenu && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+        return true;
+    return CallWindowProc(vars::oWndProc, hWnd, uMsg, wParam, lParam);
 }
 
 bool init = false;
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
 {
-	if (!init)
-	{
-		if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)& pDevice)))
-		{
-			pDevice->GetImmediateContext(&pContext);
-			DXGI_SWAP_CHAIN_DESC sd;
-			pSwapChain->GetDesc(&sd);
-			window = sd.OutputWindow;
-			ID3D11Texture2D* pBackBuffer;
-			pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)& pBackBuffer);
-			pDevice->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView);
-			pBackBuffer->Release();
-			oWndProc = (WNDPROC)SetWindowLongPtr(window, GWLP_WNDPROC, (LONG_PTR)WndProc);
-			InitImGui();
-			init = true;
-		}
+    if (!init)
+    {
+        if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&vars::pDevice)))
+        {
+            vars::pDevice->GetImmediateContext(&vars::pContext);
+            DXGI_SWAP_CHAIN_DESC sd;
+            pSwapChain->GetDesc(&sd);
+            vars::window = sd.OutputWindow;
+            ID3D11Texture2D* pBackBuffer;
+            pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+            vars::pDevice->CreateRenderTargetView(pBackBuffer, NULL, &vars::mainRenderTargetView);
+            pBackBuffer->Release();
+            vars::oWndProc = (WNDPROC)SetWindowLongPtr(vars::window, GWLP_WNDPROC, (LONG_PTR)WndProc);
 
-		else
-			return oPresent(pSwapChain, SyncInterval, Flags);
-	}
+            ImGui::CreateContext();
+            ImGui_ImplWin32_Init(vars::window);
+            ImGui_ImplDX11_Init(vars::pDevice, vars::pContext);
+            init = true;
+        }
+        return vars::oPresent(pSwapChain, SyncInterval, Flags);
+    }
 
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
+    // IL2CPP Safety: Attach thread before rendering/calling methods
+    if (hooks::_il2cpp_domain_get && hooks::_il2cpp_thread_attach) {
+        void* domain = hooks::_il2cpp_domain_get();
+        if (domain) {
+            hooks::_il2cpp_thread_attach(domain);
+        }
+    }
 
-	if (ImGui::Begin("ScheduleX"))
-	{
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
 
-	}ImGui::End();
+    gui::Render();
 
-	ImGui::Render();
-
-	pContext->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-	return oPresent(pSwapChain, SyncInterval, Flags);
+    ImGui::Render();
+    vars::pContext->OMSetRenderTargets(1, &vars::mainRenderTargetView, NULL);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    return vars::oPresent(pSwapChain, SyncInterval, Flags);
 }
 
 DWORD WINAPI MainThread(LPVOID lpReserved)
 {
-	bool init_hook = false;
-	do
-	{
-		if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
-		{
-			kiero::bind(8, (void**)& oPresent, hkPresent);
-			init_hook = true;
-		}
-	} while (!init_hook);
-	return TRUE;
+    // 1. Allocate Console for debugging
+    AllocConsole();
+    FILE* f;
+    freopen_s(&f, "CONOUT$", "w", stdout);
+    printf("[VampireInternal] Console Allocated. Version: 1.0\n");
+
+    // 2. Wait for the Game Backend to load
+    printf("[VampireInternal] Waiting for GameAssembly.dll...\n");
+    while (GetModuleHandleA("GameAssembly.dll") == nullptr)
+    {
+        Sleep(100);
+    }
+    printf("[VampireInternal] GameAssembly.dll found at: %p\n", GetModuleHandleA("GameAssembly.dll"));
+
+    // 3. Initialize Kiero (DirectX Hooking)
+    printf("[VampireInternal] Initializing Kiero...\n");
+    if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
+    {
+        // Bind the Present function (Index 8 for DX11)
+        kiero::bind(8, (void**)&vars::oPresent, hkPresent);
+
+        // 4. Initialize Game Hooks (MinHook)
+        hooks::Init();
+        printf("[VampireInternal] Initialization Complete. Press INSERT for menu.\n");
+    }
+    else
+    {
+        printf("[VampireInternal] CRITICAL ERROR: Kiero initialization failed!\n");
+    }
+
+    return TRUE;
 }
 
 BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 {
-	switch (dwReason)
-	{
-	case DLL_PROCESS_ATTACH:
-		DisableThreadLibraryCalls(hMod);
-		CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
-		break;
-	case DLL_PROCESS_DETACH:
-		kiero::shutdown();
-		break;
-	}
-	return TRUE;
+    if (dwReason == DLL_PROCESS_ATTACH) {
+        DisableThreadLibraryCalls(hMod);
+        // Create the thread to avoid blocking the game's load process
+        CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
+    }
+    return TRUE;
 }
