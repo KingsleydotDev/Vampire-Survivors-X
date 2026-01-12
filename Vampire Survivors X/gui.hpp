@@ -83,7 +83,7 @@ namespace gui
         if (!vars::bShowMenu) return;
 
         ImGui::SetNextWindowSize(ImVec2(400, 250), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin("VampireInternal", &vars::bShowMenu, ImGuiWindowFlags_NoCollapse))
+        if (ImGui::Begin("Vampire Survivors X Internal", &vars::bShowMenu, ImGuiWindowFlags_NoCollapse))
         {
             if (ImGui::BeginTabBar("MainTabs"))
             {
