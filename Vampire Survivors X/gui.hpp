@@ -44,10 +44,8 @@ namespace gui
         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.5f, 1.0f), "Local Player: %p", vars::pLocalPlayer);
         ImGui::Separator();
 
-        // Safe toggle for God Mode
         ImGui::Checkbox("God Mode", &vars::bGodMode);
 
-        // Informative note for the user
         if (!vars::pLocalPlayer)
             ImGui::TextWrapped("Waiting for player capture... (Move in-game)");
     }
@@ -64,13 +62,14 @@ namespace gui
         ImGui::Text("Cheat Settings");
         ImGui::Separator();
 		ImGui::Checkbox("Show Watermark", &vars::bWatermark);
+
         if (ImGui::Button("Unload & Detach DLL", ImVec2(-1, 25))) {
             vars::bUnload = true;
         }
 
         ImGui::Spacing();
         ImGui::Separator();
-        ImGui::TextDisabled("VampireInternal v1.1 - Minimal Stable Build");
+        ImGui::TextDisabled("Vampire Survivors Internal");
         ImGui::TextDisabled("Menu Key: [INSERT]");
     }
 
@@ -87,7 +86,7 @@ namespace gui
         {
             if (ImGui::BeginTabBar("MainTabs"))
             {
-                if (ImGui::BeginTabItem("Player")) {
+                if (ImGui::BeginTabItem("Player")) { 
                     RenderPlayerTab();
                     ImGui::EndTabItem();
                 }

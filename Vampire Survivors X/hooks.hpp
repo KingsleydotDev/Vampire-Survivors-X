@@ -10,7 +10,6 @@ namespace hooks
     inline t_il2cpp_thread_attach _il2cpp_thread_attach = nullptr;
 
 
-    // function pointers
 
 
     // hooks
@@ -27,7 +26,7 @@ namespace hooks
         return oOnUpdate(__this, method);
     }
 
-    // blocks incoming damage if god mode is toggled
+    // blocks incoming damage if god mode is toggled ig
     typedef void(__fastcall* tOnGetDamaged)(void* __this, void* damageSignal, void* method);
     inline tOnGetDamaged oOnGetDamaged = nullptr;
 
@@ -51,8 +50,6 @@ namespace hooks
                 printf("[DEBUG] Hooked %s\n", name); \
             } \
         }
-
-        // using the rvas verified from your ida dump
         CREATE_HOOK(offsets::player::OnUpdate, hkOnUpdate, oOnUpdate, "OnUpdate");
         CREATE_HOOK(offsets::player::OnGetDamaged, hkOnGetDamaged, oOnGetDamaged, "OnGetDamaged");
 

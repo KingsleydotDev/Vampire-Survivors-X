@@ -57,13 +57,11 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
 DWORD WINAPI MainThread(LPVOID lpReserved)
 {
-    // 1. Allocate Console for debugging
     AllocConsole();
     FILE* f;
     freopen_s(&f, "CONOUT$", "w", stdout);
     printf("[VampireInternal] Console Allocated. Version: 1.0\n");
 
-    // 2. Wait for the Game Backend to load
     printf("[VampireInternal] Waiting for GameAssembly.dll...\n");
     while (GetModuleHandleA("GameAssembly.dll") == nullptr)
     {
@@ -71,14 +69,11 @@ DWORD WINAPI MainThread(LPVOID lpReserved)
     }
     printf("[VampireInternal] GameAssembly.dll found at: %p\n", GetModuleHandleA("GameAssembly.dll"));
 
-    // 3. Initialize Kiero (DirectX Hooking)
     printf("[VampireInternal] Initializing Kiero...\n");
     if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
     {
-        // Bind the Present function (Index 8 for DX11)
         kiero::bind(8, (void**)&vars::oPresent, hkPresent);
 
-        // 4. Initialize Game Hooks (MinHook)
         hooks::Init();
         printf("[VampireInternal] Initialization Complete. Press INSERT for menu.\n");
     }
@@ -94,7 +89,6 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 {
     if (dwReason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hMod);
-        // Create the thread to avoid blocking the game's load process
         CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
     }
     return TRUE;

@@ -17,13 +17,14 @@ namespace vars
 
     // menu states
     inline bool bShowMenu = true;
-    inline bool bUnload = false; // Added for the Settings tab "Unload" button
+    inline bool bWatermark = true;
+    inline bool bUnload = false; // add this at some point if i cba
     inline void* pLocalPlayer = nullptr; // Captured via OnUpdate
 
     // toggles
-    inline bool bGodMode = false;      // Managed in hkOnGetDamaged
+    inline bool bGodMode = false;
     inline bool bInfiniteMagnet = false;
-    inline bool bWatermark = true;
+
 
 
 }
